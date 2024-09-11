@@ -29,7 +29,9 @@ type ContainerCheckpointOptions struct {
 	KeepRunning bool
 	// TargetFile tells the API to read (or write) the checkpoint image
 	// from (or to) the filename set in TargetFile
-	TargetFile string
+	TargetFile         string
+	PreCopyIterations  int
+	TrackMemoryChanges bool
 }
 
 // ContainerCheckpoint checkpoints a running container.
@@ -86,6 +88,15 @@ func (c *ContainerServer) ContainerCheckpoint(
 	if opts.TargetFile != "" {
 		if err := c.prepareCheckpointExport(ctr); err != nil {
 			return "", fmt.Errorf("failed to write config dumps for container %s: %w", ctr.ID(), err)
+		}
+	}
+
+	// Perform pre-copy iterations if enabled
+	if opts.PreCopyIterations > 0 && opts.TrackMemoryChanges {
+		for i := 0; i < opts.PreCopyIterations; i++ {
+			if err := c.runtime.PreCopyCheckpointContainer(ctx, ctr, specgen.Config, true); err != nil {
+				return "", fmt.Errorf("pre-copy iteration %d failed for container %s: %w", i+1, ctr.ID(), err)
+			}
 		}
 	}
 
