@@ -1572,7 +1572,7 @@ k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/watchlist
 k8s.io/client-go/util/workqueue
-# k8s.io/cri-api v0.31.0
+# k8s.io/cri-api v0.31.0 => /vm/kubernetes/staging/src/k8s.io/cri-api
 ## explicit; go 1.22.0
 k8s.io/cri-api/pkg/apis/runtime/v1
 k8s.io/cri-api/pkg/errors
@@ -1649,3 +1649,4 @@ tags.cncf.io/container-device-interface/pkg/parser
 # tags.cncf.io/container-device-interface/specs-go v0.8.0
 ## explicit; go 1.19
 tags.cncf.io/container-device-interface/specs-go
+# k8s.io/cri-api => /vm/kubernetes/staging/src/k8s.io/cri-api

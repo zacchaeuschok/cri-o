@@ -1258,6 +1258,18 @@ func (r *runtimeVM) CheckpointContainer(ctx context.Context, c *Container, specg
 	return errors.New("checkpointing not implemented for runtimeVM")
 }
 
+func (r *runtimeVM) PreCopyCheckpointContainer(
+	ctx context.Context,
+	c *Container,
+	specgen *rspec.Spec,
+	keepRunning bool,
+) error {
+	log.Debugf(ctx, "RuntimeVM.PreCopyCheckpointContainer() start")
+	defer log.Debugf(ctx, "RuntimeVM.PreCopyCheckpointContainer() end")
+
+	return errors.New("pre-copy checkpointing not implemented for runtimeVM")
+}
+
 // RestoreContainer not implemented for runtimeVM.
 func (r *runtimeVM) RestoreContainer(ctx context.Context, c *Container, cgroupParent, mountLabel string) error {
 	log.Debugf(ctx, "RuntimeVM.RestoreContainer() start")

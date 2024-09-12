@@ -79,6 +79,7 @@ type RuntimeImpl interface {
 		int32, io.ReadWriteCloser) error
 	ReopenContainerLog(context.Context, *Container) error
 	CheckpointContainer(context.Context, *Container, *rspec.Spec, bool) error
+	PreCopyCheckpointContainer(context.Context, *Container, *rspec.Spec, bool) error
 	RestoreContainer(context.Context, *Container, string, string) error
 }
 
@@ -483,6 +484,15 @@ func (r *Runtime) CheckpointContainer(ctx context.Context, c *Container, specgen
 	}
 
 	return impl.CheckpointContainer(ctx, c, specgen, leaveRunning)
+}
+
+func (r *Runtime) PreCopyCheckpointContainer(ctx context.Context, c *Container, specgen *rspec.Spec, keepRunning bool) error {
+	impl, err := r.RuntimeImpl(c)
+	if err != nil {
+		return err
+	}
+
+	return impl.PreCopyCheckpointContainer(ctx, c, specgen, keepRunning)
 }
 
 // RestoreContainer restores a container.
