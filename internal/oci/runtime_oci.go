@@ -1513,19 +1513,19 @@ func (r *runtimeOCI) PreCopyCheckpointContainer(ctx context.Context, c *Containe
 	// Setup for CRIU pre-dump using the same principles as the final checkpoint but focus on memory changes only
 	if err := crutils.CRCreateFileWithLabel(
 		c.Dir(),
-		metadata.PreDumpLogFile, // Consider using a separate log file for pre-dumps
+		metadata.DumpLogFile,
 		specgen.Linux.MountLabel,
 	); err != nil {
 		return err
 	}
 
-	workPath := c.Dir()                                       // Directory for logs like dump.log
-	imagePath := filepath.Join(c.CheckpointPath(), "predump") // Use a subdirectory for pre-dumps
+	workPath := c.Dir()
+	imagePath := filepath.Join(c.CheckpointPath(), "predump")
 
 	log.Debugf(ctx, "Writing pre-dump to %s", imagePath)
 	log.Debugf(ctx, "Writing pre-dump logs to %s", workPath)
 	args := []string{
-		"pre-dump", // Use the pre-dump action supported by CRIU
+		"pre-dump",
 		"--image-path",
 		imagePath,
 		"--work-path",
@@ -1545,7 +1545,6 @@ func (r *runtimeOCI) PreCopyCheckpointContainer(ctx context.Context, c *Containe
 		return fmt.Errorf("running %q %q failed: %w", runtimePath, args, err)
 	}
 
-	// No need to change container state as it remains running
 	return nil
 }
 

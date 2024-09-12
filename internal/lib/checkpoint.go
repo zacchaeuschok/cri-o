@@ -91,15 +91,6 @@ func (c *ContainerServer) ContainerCheckpoint(
 		}
 	}
 
-	// Perform pre-copy iterations if enabled
-	if opts.PreCopyIterations > 0 && opts.TrackMemoryChanges {
-		for i := 0; i < opts.PreCopyIterations; i++ {
-			if err := c.runtime.PreCopyCheckpointContainer(ctx, ctr, specgen.Config, true); err != nil {
-				return "", fmt.Errorf("pre-copy iteration %d failed for container %s: %w", i+1, ctr.ID(), err)
-			}
-		}
-	}
-
 	if err := c.runtime.CheckpointContainer(ctx, ctr, specgen.Config, opts.KeepRunning); err != nil {
 		return "", fmt.Errorf("failed to checkpoint container %s: %w", ctr.ID(), err)
 	}
@@ -136,6 +127,37 @@ func (c *ContainerServer) ContainerCheckpoint(
 	}
 
 	return ctr.ID(), nil
+}
+
+func (c *ContainerServer) PreCopyCheckpoint(
+	ctx context.Context,
+	config *metadata.ContainerConfig,
+	opts *ContainerCheckpointOptions,
+) error {
+	ctr, err := c.LookupContainer(ctx, config.ID)
+	if err != nil {
+		return fmt.Errorf("failed to find container %s: %w", config.ID, err)
+	}
+
+	if ctr.State().Status != oci.ContainerStateRunning {
+		return fmt.Errorf("container %s is not running", ctr.ID())
+	}
+
+	configFile := filepath.Join(ctr.BundlePath(), "config.json")
+	specgen, err := generate.NewFromFile(configFile)
+	spec := specgen.Config
+	if err != nil {
+		return fmt.Errorf("not able to read config for container %q: %w", ctr.ID(), err)
+	}
+
+	// Perform pre-copy iterations if enabled
+	for i := 0; i < opts.PreCopyIterations; i++ {
+		if err := c.runtime.PreCopyCheckpointContainer(ctx, ctr, spec, true); err != nil {
+			return fmt.Errorf("pre-copy iteration %d failed for container %s: %w", i+1, ctr.ID(), err)
+		}
+	}
+
+	return nil
 }
 
 // Copied from libpod/diff.go.
