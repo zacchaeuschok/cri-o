@@ -163,6 +163,15 @@ func (r *runtimePod) CheckpointContainer(
 	return r.oci.CheckpointContainer(ctx, c, specgen, leaveRunning)
 }
 
+func (r *runtimePod) PreCopyCheckpointContainer(
+	ctx context.Context,
+	c *Container,
+	specgen *rspec.Spec,
+	keepRunning bool,
+) error {
+	return r.oci.PreCopyCheckpointContainer(ctx, c, specgen, keepRunning)
+}
+
 func (r *runtimePod) RestoreContainer(
 	ctx context.Context,
 	c *Container,

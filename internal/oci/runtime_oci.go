@@ -1502,6 +1502,52 @@ func (r *runtimeOCI) CheckpointContainer(ctx context.Context, c *Container, spec
 	return nil
 }
 
+func (r *runtimeOCI) PreCopyCheckpointContainer(ctx context.Context, c *Container, specgen *rspec.Spec, keepRunning bool) error {
+	c.opLock.Lock()
+	defer c.opLock.Unlock()
+	runtimePath := c.RuntimePathForPlatform(r)
+	if err := r.checkpointRestoreSupported(runtimePath); err != nil {
+		return err
+	}
+
+	// Setup for CRIU pre-dump using the same principles as the final checkpoint but focus on memory changes only
+	if err := crutils.CRCreateFileWithLabel(
+		c.Dir(),
+		metadata.DumpLogFile,
+		specgen.Linux.MountLabel,
+	); err != nil {
+		return err
+	}
+
+	workPath := c.Dir()
+	imagePath := filepath.Join(c.CheckpointPath(), "predump")
+
+	log.Debugf(ctx, "Writing pre-dump to %s", imagePath)
+	log.Debugf(ctx, "Writing pre-dump logs to %s", workPath)
+	args := []string{
+		"pre-dump",
+		"--image-path",
+		imagePath,
+		"--work-path",
+		workPath,
+		"--prev-images-dir",
+		"../",         // Relative path to the base checkpoint directory if using incremental dumps
+		"--track-mem", // Important to track only memory changes
+	}
+	if keepRunning {
+		args = append(args, "--leave-running")
+	}
+
+	args = append(args, c.ID())
+
+	_, err := r.runtimeCmd(args...)
+	if err != nil {
+		return fmt.Errorf("running %q %q failed: %w", runtimePath, args, err)
+	}
+
+	return nil
+}
+
 // RestoreContainer restores a container.
 func (r *runtimeOCI) RestoreContainer(ctx context.Context, c *Container, cgroupParent, mountLabel string) error {
 	if err := r.checkpointRestoreSupported(c.RuntimePathForPlatform(r)); err != nil {

@@ -24,23 +24,33 @@ func (s *Server) CheckpointContainer(ctx context.Context, req *types.CheckpointC
 		return nil, status.Errorf(codes.NotFound, "could not find container %q: %v", req.ContainerId, err)
 	}
 
-	log.Infof(ctx, "Checkpointing container: %s", req.ContainerId)
 	config := &metadata.ContainerConfig{
 		ID: req.ContainerId,
 	}
 	opts := &lib.ContainerCheckpointOptions{
-		TargetFile: req.Location,
-		// For the forensic container checkpointing use case we
-		// keep the container running after checkpointing it.
+		TargetFile:  req.Location,
 		KeepRunning: true,
 	}
 
-	_, err = s.ContainerServer.ContainerCheckpoint(ctx, config, opts)
-	if err != nil {
-		return nil, err
+	// Check if the request is for pre-copy checkpointing
+	if req.PreCopy {
+		log.Infof(ctx, "Initiating pre-copy checkpoint for container: %s", req.ContainerId)
+		// Hardcoded for now
+		opts.PreCopyIterations = 3
+		opts.TrackMemoryChanges = true
+
+		// Invoke the pre-copy specific checkpoint method
+		if err := s.ContainerServer.PreCopyCheckpoint(ctx, config, opts); err != nil {
+			return nil, err
+		}
+	} else {
+		log.Infof(ctx, "Performing standard checkpoint for container: %s", req.ContainerId)
+		_, err = s.ContainerServer.ContainerCheckpoint(ctx, config, opts)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	log.Infof(ctx, "Checkpointed container: %s", req.ContainerId)
-
 	return &types.CheckpointContainerResponse{}, nil
 }
